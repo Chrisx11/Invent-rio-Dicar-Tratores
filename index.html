@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0c0e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Inventário · Dicar Tratores</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="floor" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48" fill="none">
+          <circle cx="24" cy="24" r="18" stroke="currentColor" stroke-width="3"/>
+          <path d="M24 10v6M24 32v6M10 24h6M32 24h6M14.2 14.2l4.2 4.2M29.6 29.6l4.2 4.2M33.8 14.2l-4.2 4.2M18.4 29.6l-4.2 4.2" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"/>
+          <circle cx="24" cy="24" r="5" fill="currentColor"/>
+        </svg>
+      </span>
+      <div class="brand-text">
+        <p class="brand-kicker">Oficina mecânica</p>
+        <h1>Dicar Tratores</h1>
+      </div>
+    </div>
+    <div class="topbar-meta">
+      <span class="pill live"><i></i> Estoque ao vivo</span>
+      <span class="date-chip" id="today"></span>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">Painel de peças</p>
+      <h2>Inventário da oficina</h2>
+      <p class="lede">Ficha completa no cadastro. Na tabela, só o que importa no dia a dia da oficina.</p>
+    </section>
+
+    <section class="kpis" aria-label="Resumo do estoque">
+      <article class="kpi">
+        <span class="kpi-label">Itens cadastrados</span>
+        <strong id="kpiTotal">0</strong>
+        <span class="kpi-foot">no inventário</span>
+      </article>
+      <article class="kpi kpi-warn">
+        <span class="kpi-label">Estoque baixo</span>
+        <strong id="kpiLow">0</strong>
+        <span class="kpi-foot">abaixo do mínimo</span>
+      </article>
+      <article class="kpi kpi-ok">
+        <span class="kpi-label">Valor em estoque</span>
+        <strong id="kpiValue">R$ 0</strong>
+        <span class="kpi-foot">custo estimado</span>
+      </article>
+      <article class="kpi">
+        <span class="kpi-label">Categorias</span>
+        <strong id="kpiCats">0</strong>
+        <span class="kpi-foot">linhas ativas</span>
+      </article>
+    </section>
+
+    <section class="board">
+      <div class="insert-bar">
+        <button class="btn-insert" id="btnInsert" type="button">
+          <span class="btn-icon" aria-hidden="true">+</span>
+          <span>
+            <strong>Inserir produto</strong>
+            <small>Nova peça no estoque</small>
+          </span>
+        </button>
+        <p class="insert-hint">Preencha a ficha completa. A tabela mostra só os dados principais; o restante fica em Visualizar.</p>
+      </div>
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="square"/></svg>
+          <input id="search" type="search" placeholder="Buscar nº, descrição, marca, part number…" autocomplete="off" />
+        </div>
+        <div class="filters-rail">
+          <button type="button" class="filter-arrow" id="filterPrev" aria-label="Categorias anteriores">‹</button>
+          <div class="filters" id="filters"></div>
+          <button type="button" class="filter-arrow" id="filterNext" aria-label="Próximas categorias">›</button>
+        </div>
+      </div>
+
+      <div class="table-shell">
+        <div class="table-head-bar">
+          <span class="stripe"></span>
+          <h3>Peças em estoque</h3>
+          <span class="count" id="rowCount">0 itens</span>
+        </div>
+        <div class="table-scroll">
+          <div class="cards" id="cards"></div>
+          <table>
+            <thead>
+              <tr>
+                <th>Nº item</th>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Marca</th>
+                <th>Qtd</th>
+                <th>Situação</th>
+                <th>Local</th>
+                <th>Valor total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+          <div class="empty" id="empty" hidden>
+            <p>Nenhuma peça encontrada.</p>
+            <button type="button" class="btn-ghost" id="emptyInsert">Inserir o primeiro produto</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="overlay" id="overlay" hidden>
+    <form class="sheet" id="form" autocomplete="off" novalidate>
+      <header class="sheet-head">
+        <p>Ficha de cadastro</p>
+        <h3 id="formTitle">Inserir produto</h3>
+        <button type="button" class="icon-btn" id="btnClose" aria-label="Fechar">×</button>
+      </header>
+
+      <div class="sheet-body">
+        <fieldset>
+          <legend>Identificação</legend>
+          <div class="sheet-grid">
+            <label>Nº item <input name="itemNumber" placeholder="Ex: 0009" /></label>
+            <label>Categoria
+              <select name="categoryPick" id="fieldCategoryPick"></select>
+            </label>
+            <label id="newCatWrap" hidden>
+              Nome da nova categoria
+              <input name="categoryNew" id="fieldCategoryNew" placeholder="Ex: Funilaria" />
+            </label>
+            <label>Subcategoria
+              <input name="subcategory" id="fieldSubcategory" list="listSubcategory" placeholder="Selecione ou digite uma nova" />
+              <datalist id="listSubcategory"></datalist>
+            </label>
+            <label class="span-3">Descrição do item <input name="description" placeholder="Ex: Óleo sintético 5W30 1L" /></label>
+            <label>Marca <input name="brand" placeholder="Ex: Ipiranga" /></label>
+            <label>Modelo <input name="model" placeholder="Ex: 5W30 SN" /></label>
+            <label>Código / Part Number <input name="partNumber" placeholder="Ex: OLE-5W30-01" /></label>
+            <label>Nº patrimônio <input name="assetNumber" placeholder="Ex: PAT-4412" /></label>
+            <label>Nº série <input name="serialNumber" placeholder="Ex: SN-8891" /></label>
+            <label>Aplicação <input name="application" placeholder="Ex: Motores 1.0 / 1.6 flex" /></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Estoque e conservação</legend>
+          <div class="sheet-grid">
+            <label>Unidade
+              <select name="unit">
+                <option value="">—</option>
+                <option>UN</option>
+                <option>PC</option>
+                <option>PAR</option>
+                <option>KIT</option>
+                <option>L</option>
+                <option>ML</option>
+                <option>KG</option>
+                <option>JOGO</option>
+              </select>
+            </label>
+            <label>Quantidade <input name="qty" type="number" min="0" step="1" /></label>
+            <label>Estado de conservação
+              <select name="condition">
+                <option value="">—</option>
+                <option>Novo</option>
+                <option>Bom</option>
+                <option>Regular</option>
+                <option>Ruim</option>
+                <option>Insuficiente</option>
+              </select>
+            </label>
+            <label>Localização <input name="location" placeholder="Ex: Prateleira A-12" /></label>
+            <label>Responsável <input name="responsible" placeholder="Ex: João Silva" /></label>
+            <label>Situação
+              <select name="status">
+                <option value="">—</option>
+                <option>Ativo</option>
+                <option>Em uso</option>
+                <option>Reservado</option>
+                <option>Em falta</option>
+                <option>Manutenção</option>
+                <option>Baixado</option>
+              </select>
+            </label>
+            <label>Estoque mínimo <input name="minStock" type="number" min="0" step="1" /></label>
+            <label>Estoque máximo <input name="maxStock" type="number" min="0" step="1" /></label>
+            <label>Lote <input name="lot" placeholder="Ex: L2026-04" /></label>
+            <label>Validade <input name="expiry" type="date" /></label>
+            <label>Data da contagem <input name="countDate" type="date" /></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Valores e observação</legend>
+          <div class="sheet-grid">
+            <label>Valor unitário (R$) <input name="unitValue" id="fieldUnitValue" type="number" min="0" step="0.01" /></label>
+            <label>Valor total (R$) <input name="totalValue" id="fieldTotalValue" type="text" readonly /></label>
+            <label class="span-3">Observação <textarea name="notes" rows="3" placeholder="Anotações da peça, restrição de uso, fornecedor…"></textarea></label>
+          </div>
+        </fieldset>
+      </div>
+
+      <footer class="sheet-foot">
+        <button type="button" class="btn-ghost" id="btnCancel">Cancelar</button>
+        <button type="submit" class="btn-solid" id="btnSave">Salvar no inventário</button>
+      </footer>
+    </form>
+  </div>
+
+  <div class="overlay" id="viewOverlay" hidden>
+    <article class="sheet sheet-view">
+      <header class="sheet-head">
+        <p>Ficha do item</p>
+        <h3 id="viewTitle">Visualizar produto</h3>
+        <button type="button" class="icon-btn" id="btnViewClose" aria-label="Fechar">×</button>
+      </header>
+      <dl class="view-grid" id="viewGrid"></dl>
+      <footer class="sheet-foot">
+        <button type="button" class="btn-ghost" id="btnViewCancel">Fechar</button>
+        <button type="button" class="btn-solid" id="btnViewEdit">Editar item</button>
+      </footer>
+    </article>
+  </div>
+
+  <div class="overlay" id="setupOverlay" hidden>
+    <article class="sheet setup-sheet">
+      <header class="sheet-head">
+        <p>Conexão Supabase</p>
+        <h3>Criar as tabelas</h3>
+      </header>
+      <div class="sheet-body">
+        <p class="lede">Execute este SQL uma vez no editor do Supabase e recarregue a página. Sem isso o inventário não consegue gravar na nuvem.</p>
+        <pre id="setupSql" class="setup-sql"></pre>
+      </div>
+      <footer class="sheet-foot">
+        <a class="btn-ghost" id="btnOpenSql" href="https://supabase.com/dashboard/project/ztiymllmnylupgyjiqcz/sql/new" target="_blank" rel="noopener">Abrir SQL Editor</a>
+        <button type="button" class="btn-ghost" id="btnCopySql">Copiar SQL</button>
+        <button type="button" class="btn-solid" id="btnReload">Já executei</button>
+      </footer>
+    </article>
+  </div>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
