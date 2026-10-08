@@ -159,7 +159,8 @@ main {
 .insert-bar {
   display: flex;
   align-items: center;
-  gap: 22px;
+  justify-content: space-between;
+  gap: 16px;
   padding: 18px;
   background:
     repeating-linear-gradient(-45deg, transparent 0 10px, rgba(255,90,31,0.07) 10px 12px),
@@ -167,12 +168,117 @@ main {
   border-bottom: 1px solid #5a2a16;
 }
 
-.insert-hint {
-  max-width: 340px;
+.btn-balance {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 260px;
+  padding: 14px 18px;
+  text-decoration: none;
+  color: var(--ink);
+  background: #121417;
+  border: 1px solid var(--ember);
+  box-shadow: 6px 6px 0 #4a1a0c;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.btn-balance:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 #4a1a0c; }
+.btn-balance:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 #4a1a0c; }
+
+.btn-balance .btn-icon {
+  color: var(--ember-2);
+}
+
+.btn-balance strong {
+  display: block;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 26px;
+  letter-spacing: 0.06em;
+  text-align: left;
+  color: var(--ink);
+}
+
+.btn-balance small {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.75;
+  text-align: left;
+  color: var(--muted);
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  text-decoration: none;
+  font: 700 12px/1 "Barlow", sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.btn-back:hover { border-color: var(--ember); color: var(--ember-2); }
+
+.chart-hint {
+  padding: 12px 18px 0;
   color: var(--muted);
   font-size: 14px;
-  line-height: 1.45;
 }
+
+.chart {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) 1fr minmax(140px, 200px);
+  gap: 14px;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: #121417;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.bar-row:hover:not(:disabled) { border-color: var(--ember); background: rgba(255,90,31,0.06); }
+.bar-row:disabled { cursor: default; }
+
+.bar-label {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.bar-track {
+  height: 14px;
+  background: #2a2d33;
+  overflow: hidden;
+}
+
+.bar-track i { display: block; height: 100%; }
+
+.bar-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.bar-meta b {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13px;
+}
+
+.bar-meta small { color: var(--muted); font-size: 11px; }
 
 .btn-insert {
   display: flex;
@@ -225,6 +331,8 @@ main {
   gap: 14px;
   margin-bottom: 22px;
 }
+
+.kpis-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 .kpi {
   position: relative;
@@ -738,13 +846,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--ember); }
 @media (max-width: 1100px) {
   .kpis { grid-template-columns: 1fr 1fr; }
   .insert-bar { flex-wrap: wrap; }
+  .btn-balance { margin-left: 0; }
   .sheet-grid, .view-grid { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 900px) {
   .topbar, main { padding-left: 10px; padding-right: 10px; }
   .sheet-grid, .view-grid { grid-template-columns: 1fr; }
-  .btn-insert { width: 100%; }
 }
 
 @media (max-width: 760px) {
@@ -778,15 +886,23 @@ input:focus, select:focus, textarea:focus { border-color: var(--ember); }
     top: 0;
     z-index: 6;
     padding: 12px;
-    gap: 0;
+    gap: 10px;
+    flex-direction: column;
+    align-items: stretch;
   }
   .insert-hint { display: none; }
-  .btn-insert {
+  .btn-insert,
+  .btn-balance {
     min-width: 0;
     width: 100%;
+    margin-left: 0;
     box-shadow: 4px 4px 0 #4a1a0c;
   }
-  .btn-insert:hover, .btn-insert:active { transform: none; box-shadow: 4px 4px 0 #4a1a0c; }
+  .btn-insert:hover, .btn-insert:active,
+  .btn-balance:hover, .btn-balance:active { transform: none; box-shadow: 4px 4px 0 #4a1a0c; }
+  .bar-row { grid-template-columns: 1fr; gap: 8px; }
+  .bar-meta { align-items: flex-start; }
+  .btn-back { width: 100%; justify-content: center; }
   .btn-icon { width: 40px; height: 40px; font-size: 28px; }
   .btn-insert strong { font-size: 22px; }
 

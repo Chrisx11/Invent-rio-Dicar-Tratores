@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0c0e" />
+  <title>Balanço · Dicar Tratores</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="floor" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48" fill="none">
+          <circle cx="24" cy="24" r="18" stroke="currentColor" stroke-width="3"/>
+          <path d="M24 10v6M24 32v6M10 24h6M32 24h6M14.2 14.2l4.2 4.2M29.6 29.6l4.2 4.2M33.8 14.2l-4.2 4.2M18.4 29.6l-4.2 4.2" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"/>
+          <circle cx="24" cy="24" r="5" fill="currentColor"/>
+        </svg>
+      </span>
+      <div class="brand-text">
+        <p class="brand-kicker">Oficina mecânica</p>
+        <h1>Dicar Tratores</h1>
+      </div>
+    </div>
+    <a class="btn-back" href="index.html">← Voltar ao inventário</a>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">Financeiro do estoque</p>
+      <h2>Balanço</h2>
+      <p class="lede">Valor em estoque por categoria. Clique numa barra para abrir as subcategorias.</p>
+    </section>
+
+    <section class="kpis kpis-3" aria-label="Resumo do balanço">
+      <article class="kpi kpi-ok">
+        <span class="kpi-label">Valor total</span>
+        <strong id="kpiTotalValue">R$ 0</strong>
+        <span class="kpi-foot">qty × valor unitário</span>
+      </article>
+      <article class="kpi">
+        <span class="kpi-label">Categorias</span>
+        <strong id="kpiCatCount">0</strong>
+        <span class="kpi-foot">com valor em estoque</span>
+      </article>
+      <article class="kpi">
+        <span class="kpi-label">Itens</span>
+        <strong id="kpiItemCount">0</strong>
+        <span class="kpi-foot">no balanço</span>
+      </article>
+    </section>
+
+    <section class="board">
+      <div class="table-head-bar">
+        <span class="stripe"></span>
+        <h3 id="chartTitle">Valor por categoria</h3>
+        <button type="button" class="btn-ghost" id="btnChartBack" hidden>‹ Categorias</button>
+      </div>
+      <p class="chart-hint" id="chartHint">Clique numa barra para ver o detalhe por subcategoria.</p>
+      <div class="chart" id="chart"></div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="balanco.js"></script>
+</body>
+</html>
