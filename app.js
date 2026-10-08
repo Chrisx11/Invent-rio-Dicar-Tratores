@@ -465,7 +465,7 @@ function renderTable() {
         </td>
         <td><span class="cat"><i class="dot" style="background:${color}"></i>${escapeHtml(dash(it.category))}</span></td>
         <td>${escapeHtml(dash(it.brand))}</td>
-        <td class="qty">${dash(it.qty)}<small> ${escapeHtml(it.unit || "")}</small></td>
+        <td>${qtyStepper(it)}</td>
         <td>${statusTag} ${stockTag}</td>
         <td class="loc">${escapeHtml(dash(it.location))}</td>
         <td class="price">${it.unitValue === "" || it.unitValue == null ? "—" : money(totalOf(it))}</td>
@@ -495,7 +495,7 @@ function renderTable() {
         <p class="card-sub">${escapeHtml(dash(it.brand))} · ${escapeHtml(dash(it.location))}</p>
         <div class="card-facts">
           <span class="cat"><i class="dot" style="background:${color}"></i>${escapeHtml(dash(it.category))}</span>
-          <span class="qty">${dash(it.qty)}<small> ${escapeHtml(it.unit || "")}</small></span>
+          ${qtyStepper(it)}
           <span class="price">${it.unitValue === "" || it.unitValue == null ? "—" : money(totalOf(it))}</span>
         </div>
         <div class="row-actions">
@@ -523,6 +523,14 @@ function formatDate(value) {
   const [y, m, d] = String(value).split("-");
   if (!d) return value;
   return `${d}/${m}/${y}`;
+}
+
+function qtyStepper(it) {
+  return `<div class="qty-step">
+    <button type="button" class="qty-btn" data-qty="${it.id}" data-delta="-1" aria-label="Diminuir quantidade">−</button>
+    <span class="qty">${dash(it.qty)}<small> ${escapeHtml(it.unit || "")}</small></span>
+    <button type="button" class="qty-btn" data-qty="${it.id}" data-delta="1" aria-label="Aumentar quantidade">+</button>
+  </div>`;
 }
 
 function render() {
@@ -624,8 +632,210 @@ function readForm(f) {
   };
 }
 
+function fillQuickCategories(selected) {
+  const cats = allCategoryOptions();
+  const isCustom = selected && !cats.includes(selected);
+  $("quickCategoryPick").innerHTML =
+    `<option value="">—</option>` +
+    cats.map((c) => `<option value="${escapeHtml(c)}" ${c === selected ? "selected" : ""}>${escapeHtml(c)}</option>`).join("") +
+    `<option value="${NEW_CAT}">＋ Criar nova categoria</option>`;
+  if (isCustom) {
+    $("quickCategoryPick").value = NEW_CAT;
+    $("quickCategoryNew").value = selected;
+    $("quickNewCatWrap").hidden = false;
+  } else {
+    $("quickCategoryNew").value = "";
+    $("quickNewCatWrap").hidden = true;
+    if (selected) $("quickCategoryPick").value = selected;
+  }
+}
+
+function currentQuickCategory() {
+  const pick = $("quickCategoryPick").value;
+  if (pick === NEW_CAT) return $("quickCategoryNew").value.trim();
+  return pick;
+}
+
+function readQuickPreset() {
+  return {
+    partNumber: $("quickPartNumber").value.trim().toUpperCase(),
+    description: $("quickDescription").value.trim(),
+    category: currentQuickCategory(),
+    qty: numOrEmpty($("quickQty").value),
+    unitValue: numOrEmpty($("quickUnitValue").value),
+  };
+}
+
+function openQuick(preset = {}) {
+  $("quickForm").reset();
+  $("quickQty").value = preset.qty ?? 1;
+  $("quickPartNumber").value = preset.partNumber || "";
+  $("quickDescription").value = preset.description || "";
+  $("quickUnitValue").value = preset.unitValue ?? "";
+  fillQuickCategories(preset.category || "");
+  $("quickOverlay").hidden = false;
+  (preset.partNumber ? $("quickDescription") : $("quickPartNumber")).focus();
+}
+
+function closeQuick() {
+  $("quickOverlay").hidden = true;
+}
+
+function blankItem(partial = {}) {
+  return {
+    id: crypto.randomUUID(),
+    itemNumber: nextItemNumber(),
+    category: "",
+    subcategory: "",
+    description: "",
+    brand: "",
+    model: "",
+    partNumber: "",
+    assetNumber: "",
+    serialNumber: "",
+    application: "",
+    unit: "UN",
+    qty: 1,
+    condition: "",
+    location: "",
+    responsible: "",
+    unitValue: "",
+    minStock: "",
+    maxStock: "",
+    lot: "",
+    expiry: "",
+    status: "Ativo",
+    countDate: "",
+    notes: "",
+    ...partial,
+  };
+}
+
+function normCode(value) {
+  return String(value || "").trim().toUpperCase().replace(/\s+/g, "");
+}
+
+function findByCode(code) {
+  const c = normCode(code);
+  if (!c) return null;
+  return (
+    items.find((i) =>
+      [i.partNumber, i.itemNumber, i.assetNumber, i.serialNumber].some((v) => normCode(v) === c)
+    ) || null
+  );
+}
+
+const pendingQty = new Set();
+
+async function bumpQty(id, delta, { silent } = {}) {
+  const item = items.find((i) => i.id === id);
+  if (!item || pendingQty.has(id)) return item;
+  const current = Number(item.qty || 0);
+  const next = Math.max(0, current + Number(delta || 0));
+  if (next === current && delta < 0) {
+    if (!silent) toast("Quantidade já está em 0");
+    return item;
+  }
+  const prev = item.qty;
+  item.qty = next;
+  render();
+  pendingQty.add(id);
+  try {
+    await persistItem({ ...item }, true);
+    if (!silent) toast(`${item.description || item.partNumber || "Item"} · ${next}`);
+  } catch (err) {
+    console.error(err);
+    item.qty = prev;
+    render();
+    toast("Não foi possível atualizar a quantidade");
+  } finally {
+    pendingQty.delete(id);
+  }
+  return item;
+}
+
+let html5Qr = null;
+let scanTarget = null;
+let scanBusy = false;
+
+async function startScan(target) {
+  if (html5Qr) await stopScan();
+  scanTarget = target;
+  scanBusy = false;
+  $("scanOverlay").hidden = false;
+  $("scanReader").innerHTML = "";
+  if (typeof Html5Qrcode === "undefined") {
+    $("scanOverlay").hidden = true;
+    toast("Câmera indisponível. Use a pistola no campo de código.");
+    return;
+  }
+  html5Qr = new Html5Qrcode("scanReader");
+  try {
+    await html5Qr.start(
+      { facingMode: "environment" },
+      { fps: 8, qrbox: { width: 240, height: 140 } },
+      (text) => {
+        if (scanBusy) return;
+        scanBusy = true;
+        const value = text;
+        stopScan().then(() => applyBarcode(value, target));
+      }
+    );
+  } catch (err) {
+    console.error(err);
+    html5Qr = null;
+    $("scanReader").innerHTML = `<p class="chart-hint">Câmera indisponível neste dispositivo. Feche e use a pistola USB no campo de código.</p>`;
+    toast("Não foi possível abrir a câmera. Use a pistola USB.");
+  }
+}
+
+async function stopScan() {
+  $("scanOverlay").hidden = true;
+  if (html5Qr) {
+    try { await html5Qr.stop(); } catch {}
+    try { html5Qr.clear(); } catch {}
+    html5Qr = null;
+  }
+  $("scanReader").innerHTML = "";
+  scanBusy = false;
+}
+
+async function applyBarcode(raw, target) {
+  const code = String(raw || "").trim();
+  if (!code) return;
+  const existing = findByCode(code);
+
+  if (target === "lookup") {
+    if (existing) await bumpQty(existing.id, 1);
+    else {
+      openQuick({ partNumber: code.toUpperCase() });
+      toast("Código novo · complete o cadastro");
+    }
+    return;
+  }
+
+  const input = $(target);
+  if (input) {
+    input.value = code.toUpperCase();
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  if (target === "quickPartNumber" && existing) {
+    const qty = Number($("quickQty").value || 1) || 1;
+    closeQuick();
+    await bumpQty(existing.id, qty);
+  }
+}
+
+$("btnQuick").onclick = () => openQuick();
+$("emptyInsert").onclick = () => openQuick();
 $("btnInsert").onclick = () => openForm();
-$("emptyInsert").onclick = () => openForm();
+$("btnQuickClose").onclick = closeQuick;
+$("btnQuickToFull").onclick = () => {
+  const preset = readQuickPreset();
+  closeQuick();
+  openForm(preset);
+};
 $("btnClose").onclick = closeForm;
 $("btnCancel").onclick = closeForm;
 $("btnViewClose").onclick = closeView;
@@ -641,6 +851,68 @@ $("overlay").addEventListener("click", (e) => {
 });
 $("viewOverlay").addEventListener("click", (e) => {
   if (e.target === $("viewOverlay")) closeView();
+});
+$("quickOverlay").addEventListener("click", (e) => {
+  if (e.target === $("quickOverlay")) closeQuick();
+});
+$("scanOverlay").addEventListener("click", (e) => {
+  if (e.target === $("scanOverlay")) stopScan();
+});
+
+$("quickCategoryPick").addEventListener("change", () => {
+  const isNew = $("quickCategoryPick").value === NEW_CAT;
+  $("quickNewCatWrap").hidden = !isNew;
+  if (isNew) $("quickCategoryNew").focus();
+  else $("quickCategoryNew").value = "";
+});
+
+$("quickForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const preset = readQuickPreset();
+  if (!preset.description && !preset.partNumber) {
+    toast("Informe a descrição ou o código");
+    return;
+  }
+  if (preset.partNumber) {
+    const existing = findByCode(preset.partNumber);
+    if (existing) {
+      const add = Number(preset.qty || 1) || 1;
+      closeQuick();
+      await bumpQty(existing.id, add);
+      return;
+    }
+  }
+  const data = blankItem(preset);
+  try {
+    await persistItem(data, false);
+    await rememberCategory(data.category);
+    items.unshift(data);
+    toast("Produto inserido no inventário");
+    closeQuick();
+    render();
+  } catch (err) {
+    console.error(err);
+    if (isMissingTable(err)) showSetup();
+    else toast("Não foi possível salvar no Supabase");
+  }
+};
+
+$("quickPartNumber").addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  e.preventDefault();
+  applyBarcode($("quickPartNumber").value, "quickPartNumber");
+});
+$("fieldPartNumber").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") e.preventDefault();
+});
+
+$("btnScanLookup").onclick = () => startScan("lookup");
+$("btnScanClose").onclick = () => stopScan();
+$("btnScanCancel").onclick = () => stopScan();
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-scan]");
+  if (!btn) return;
+  startScan(btn.dataset.scan);
 });
 
 $("fieldCategoryPick").addEventListener("change", () => {
@@ -687,6 +959,12 @@ $("filters").onclick = (e) => {
 $("search").oninput = renderTable;
 
 async function onListClick(e) {
+  const qtyBtn = e.target.closest("[data-qty]");
+  if (qtyBtn) {
+    e.preventDefault();
+    await bumpQty(qtyBtn.dataset.qty, Number(qtyBtn.dataset.delta), { silent: true });
+    return;
+  }
   const view = e.target.closest("[data-view]");
   const edit = e.target.closest("[data-edit]");
   const del = e.target.closest("[data-del]");

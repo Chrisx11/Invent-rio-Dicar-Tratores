@@ -40,7 +40,7 @@
     <section class="hero">
       <p class="eyebrow">Painel de peças</p>
       <h2>Inventário da oficina</h2>
-      <p class="lede">Ficha completa no cadastro. Na tabela, só o que importa no dia a dia da oficina.</p>
+      <p class="lede">Cadastro rápido no balcão. Ficha completa quando precisar de todos os campos.</p>
     </section>
 
     <section class="kpis" aria-label="Resumo do estoque">
@@ -68,13 +68,21 @@
 
     <section class="board">
       <div class="insert-bar">
-        <button class="btn-insert" id="btnInsert" type="button">
-          <span class="btn-icon" aria-hidden="true">+</span>
-          <span>
-            <strong>Inserir produto</strong>
-            <small>Nova peça no estoque</small>
-          </span>
-        </button>
+        <div class="insert-actions">
+          <button class="btn-insert" id="btnQuick" type="button">
+            <span class="btn-icon" aria-hidden="true">+</span>
+            <span>
+              <strong>Cadastro rápido</strong>
+              <small>Código, qtd e valor</small>
+            </span>
+          </button>
+          <button class="btn-full" id="btnInsert" type="button">
+            <span>
+              <strong>Ficha completa</strong>
+              <small>Todos os campos</small>
+            </span>
+          </button>
+        </div>
         <a class="btn-balance" href="balanco.html">
           <span class="btn-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2" stroke="currentColor" stroke-width="2.2" stroke-linecap="square"/></svg>
@@ -89,6 +97,9 @@
         <div class="search-wrap">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="square"/></svg>
           <input id="search" type="search" placeholder="Buscar nº, descrição, marca, part number…" autocomplete="off" />
+          <button type="button" class="scan-btn" id="btnScanLookup" title="Ler código de barras" aria-label="Ler código de barras">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M7 8v8M10 8v8M12 8v8M15 8v8M18 8v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg>
+          </button>
         </div>
         <div class="filters-rail">
           <button type="button" class="filter-arrow" id="filterPrev" aria-label="Categorias anteriores">‹</button>
@@ -123,7 +134,7 @@
           </table>
           <div class="empty" id="empty" hidden>
             <p>Nenhuma peça encontrada.</p>
-            <button type="button" class="btn-ghost" id="emptyInsert">Inserir o primeiro produto</button>
+            <button type="button" class="btn-ghost" id="emptyInsert">Cadastro rápido</button>
           </div>
         </div>
       </div>
@@ -157,7 +168,14 @@
             <label class="span-3">Descrição do item <input name="description" placeholder="Ex: Óleo sintético 5W30 1L" /></label>
             <label>Marca <input name="brand" placeholder="Ex: Ipiranga" /></label>
             <label>Modelo <input name="model" placeholder="Ex: 5W30 SN" /></label>
-            <label>Código / Part Number <input name="partNumber" placeholder="Ex: OLE-5W30-01" /></label>
+            <label>Código / Part Number
+              <span class="scan-field">
+                <input name="partNumber" id="fieldPartNumber" placeholder="Ex: OLE-5W30-01" />
+                <button type="button" class="scan-btn" data-scan="fieldPartNumber" title="Ler código" aria-label="Ler código">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M7 8v8M10 8v8M12 8v8M15 8v8M18 8v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg>
+                </button>
+              </span>
+            </label>
             <label>Nº patrimônio <input name="assetNumber" placeholder="Ex: PAT-4412" /></label>
             <label>Nº série <input name="serialNumber" placeholder="Ex: SN-8891" /></label>
             <label>Aplicação <input name="application" placeholder="Ex: Motores 1.0 / 1.6 flex" /></label>
@@ -229,6 +247,57 @@
     </form>
   </div>
 
+  <div class="overlay" id="quickOverlay" hidden>
+    <form class="sheet sheet-quick" id="quickForm" autocomplete="off" novalidate>
+      <header class="sheet-head">
+        <p>Balcão</p>
+        <h3>Cadastro rápido</h3>
+        <button type="button" class="icon-btn" id="btnQuickClose" aria-label="Fechar">×</button>
+      </header>
+      <div class="sheet-body">
+        <div class="sheet-grid">
+          <label class="span-3">Código de barras / Part Number
+            <span class="scan-field">
+              <input name="partNumber" id="quickPartNumber" placeholder="Leia o código ou digite" />
+              <button type="button" class="scan-btn" data-scan="quickPartNumber" title="Ler código" aria-label="Ler código">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M7 8v8M10 8v8M12 8v8M15 8v8M18 8v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg>
+              </button>
+            </span>
+          </label>
+          <label class="span-3">Descrição <input name="description" id="quickDescription" placeholder="Ex: Filtro de combustível" /></label>
+          <label>Categoria
+            <select name="categoryPick" id="quickCategoryPick"></select>
+          </label>
+          <label id="quickNewCatWrap" hidden>
+            Nova categoria
+            <input name="categoryNew" id="quickCategoryNew" placeholder="Nome da categoria" />
+          </label>
+          <label>Quantidade <input name="qty" id="quickQty" type="number" min="0" step="1" value="1" /></label>
+          <label>Valor unitário (R$) <input name="unitValue" id="quickUnitValue" type="number" min="0" step="0.01" /></label>
+        </div>
+      </div>
+      <footer class="sheet-foot">
+        <button type="button" class="btn-ghost" id="btnQuickToFull">Ficha completa</button>
+        <button type="submit" class="btn-solid">Salvar rápido</button>
+      </footer>
+    </form>
+  </div>
+
+  <div class="overlay" id="scanOverlay" hidden>
+    <article class="sheet scan-sheet">
+      <header class="sheet-head">
+        <p>Leitor</p>
+        <h3>Aponte para o código</h3>
+        <button type="button" class="icon-btn" id="btnScanClose" aria-label="Fechar">×</button>
+      </header>
+      <div class="scan-reader" id="scanReader"></div>
+      <p class="chart-hint">Use a câmera do celular ou uma pistola USB no campo de código.</p>
+      <footer class="sheet-foot">
+        <button type="button" class="btn-ghost" id="btnScanCancel">Cancelar</button>
+      </footer>
+    </article>
+  </div>
+
   <div class="overlay" id="viewOverlay" hidden>
     <article class="sheet sheet-view">
       <header class="sheet-head">
@@ -264,6 +333,7 @@
 
   <div class="toast" id="toast" role="status" hidden></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

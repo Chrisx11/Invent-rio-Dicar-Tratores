@@ -172,7 +172,7 @@ main {
   display: flex;
   align-items: center;
   gap: 14px;
-  min-width: 260px;
+  min-width: 220px;
   padding: 14px 18px;
   text-decoration: none;
   color: var(--ink);
@@ -284,7 +284,7 @@ main {
   display: flex;
   align-items: center;
   gap: 14px;
-  min-width: 280px;
+  min-width: 240px;
   padding: 14px 18px;
   border: 0;
   cursor: pointer;
@@ -324,6 +324,113 @@ main {
   opacity: 0.75;
   text-align: left;
 }
+
+.insert-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-full {
+  display: flex;
+  align-items: center;
+  min-width: 170px;
+  padding: 14px 18px;
+  border: 1px solid var(--ember);
+  cursor: pointer;
+  color: var(--ink);
+  background: #121417;
+  box-shadow: 6px 6px 0 #4a1a0c;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.btn-full:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 #4a1a0c; }
+.btn-full:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 #4a1a0c; }
+
+.btn-full strong {
+  display: block;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  text-align: left;
+}
+
+.btn-full small {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.75;
+  text-align: left;
+  color: var(--muted);
+}
+
+.scan-field {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.scan-field input { flex: 1; min-width: 0; }
+
+.scan-btn {
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: #121417;
+  color: var(--ember-2);
+  cursor: pointer;
+}
+
+.scan-btn:hover { border-color: var(--ember); color: var(--ember); }
+
+.search-wrap .scan-btn {
+  flex-basis: 36px;
+  width: 36px;
+  height: 36px;
+  margin-right: -4px;
+}
+
+.qty-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qty-btn {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  background: #121417;
+  color: var(--ink);
+  cursor: pointer;
+  font: 600 18px/1 "IBM Plex Mono", monospace;
+}
+
+.qty-btn:hover { border-color: var(--ember); color: var(--ember-2); }
+
+.sheet-quick { width: min(640px, 100%); }
+.scan-sheet { width: min(480px, 100%); }
+
+.scan-reader {
+  margin: 16px 18px 0;
+  min-height: 240px;
+  background: #0e1013;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.scan-reader video,
+.scan-reader canvas,
+.scan-reader img {
+  width: 100% !important;
+  display: block;
+}
+
+#quickNewCatWrap input { border-color: var(--ember); }
 
 .kpis {
   display: grid;
@@ -503,7 +610,7 @@ main {
 
 .table-scroll { overflow-x: auto; min-height: 320px; }
 
-table { width: 100%; min-width: 1080px; border-collapse: collapse; }
+table { width: 100%; min-width: 1180px; border-collapse: collapse; }
 
 th {
   text-align: left;
@@ -845,8 +952,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--ember); }
 
 @media (max-width: 1100px) {
   .kpis { grid-template-columns: 1fr 1fr; }
-  .insert-bar { flex-wrap: wrap; }
-  .btn-balance { margin-left: 0; }
   .sheet-grid, .view-grid { grid-template-columns: 1fr 1fr; }
 }
 
@@ -891,7 +996,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--ember); }
     align-items: stretch;
   }
   .insert-hint { display: none; }
+  .insert-actions { flex-direction: column; align-items: stretch; }
   .btn-insert,
+  .btn-full,
   .btn-balance {
     min-width: 0;
     width: 100%;
@@ -899,7 +1006,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--ember); }
     box-shadow: 4px 4px 0 #4a1a0c;
   }
   .btn-insert:hover, .btn-insert:active,
+  .btn-full:hover, .btn-full:active,
   .btn-balance:hover, .btn-balance:active { transform: none; box-shadow: 4px 4px 0 #4a1a0c; }
+  .qty-btn { width: 42px; height: 42px; }
+  .scan-btn { width: 48px; height: 48px; flex-basis: 48px; }
+  .search-wrap .scan-btn { width: 42px; height: 42px; flex-basis: 42px; }
   .bar-row { grid-template-columns: 1fr; gap: 8px; }
   .bar-meta { align-items: flex-start; }
   .btn-back { width: 100%; justify-content: center; }
