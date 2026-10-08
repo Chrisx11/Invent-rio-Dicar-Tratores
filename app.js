@@ -757,11 +757,86 @@ async function bumpQty(id, delta, { silent } = {}) {
 let html5Qr = null;
 let scanTarget = null;
 let scanBusy = false;
+let zoomCaps = null;
+
+function scanVideoTrack() {
+  const video = $("scanReader")?.querySelector("video");
+  return video?.srcObject?.getVideoTracks?.()[0] || null;
+}
+
+function resetZoomBar() {
+  zoomCaps = null;
+  $("zoomBar").hidden = true;
+  $("zoomRange").disabled = false;
+  $("zoomIn").disabled = false;
+  $("zoomOut").disabled = false;
+  $("zoomRange").value = 1;
+  $("zoomLabel").textContent = "1.0×";
+  $("scanHint").textContent = "Aumente o zoom e segure o código a uns 20 cm. Encostar na lente tira o foco.";
+}
+
+async function applyCameraTuning(zoomValue) {
+  const track = scanVideoTrack();
+  if (!track || $("scanOverlay").hidden) return;
+  const caps = track.getCapabilities?.() || {};
+  const advanced = [];
+  if (Array.isArray(caps.focusMode) && caps.focusMode.includes("continuous")) {
+    advanced.push({ focusMode: "continuous" });
+  }
+  if (zoomCaps && zoomValue != null) {
+    const zoom = Math.min(zoomCaps.max, Math.max(zoomCaps.min, Number(zoomValue)));
+    advanced.push({ zoom });
+    $("zoomRange").value = zoom;
+    $("zoomLabel").textContent = `${zoom.toFixed(1)}×`;
+  }
+  if (!advanced.length) return;
+  try {
+    await track.applyConstraints({ advanced });
+  } catch (err) {
+    console.warn(err);
+  }
+}
+
+async function tuneCamera() {
+  const track = scanVideoTrack();
+  if (!track) return;
+  const caps = track.getCapabilities?.() || {};
+  const zoom = caps.zoom;
+  if (zoom && zoom.max > zoom.min) {
+    zoomCaps = zoom;
+    const range = $("zoomRange");
+    range.min = String(zoom.min);
+    range.max = String(zoom.max);
+    range.step = String(zoom.step || 0.1);
+    range.disabled = false;
+    $("zoomIn").disabled = false;
+    $("zoomOut").disabled = false;
+    const start = zoom.min <= 2 && zoom.max >= 2 ? 2 : zoom.min + (zoom.max - zoom.min) * 0.4;
+    $("zoomBar").hidden = false;
+    await applyCameraTuning(start);
+    $("scanHint").textContent = "Use o zoom e mantenha o código a uns 20 cm, sem encostar na lente.";
+  } else {
+    zoomCaps = null;
+    $("zoomBar").hidden = true;
+    $("scanHint").textContent = "Este aparelho não libera zoom. Segure o código a uns 20 cm, sem encostar na lente.";
+    await applyCameraTuning(null);
+  }
+  setTimeout(() => {
+    if (!$("scanOverlay").hidden) applyCameraTuning(zoomCaps ? Number($("zoomRange").value) : null);
+  }, 500);
+}
+
+function stepZoom(direction) {
+  if (!zoomCaps) return;
+  const step = Number($("zoomRange").step) || zoomCaps.step || 0.1;
+  applyCameraTuning(Number($("zoomRange").value) + direction * step);
+}
 
 async function startScan(target) {
   if (html5Qr) await stopScan();
   scanTarget = target;
   scanBusy = false;
+  resetZoomBar();
   $("scanOverlay").hidden = false;
   $("scanReader").innerHTML = "";
   if (typeof Html5Qrcode === "undefined") {
@@ -773,7 +848,18 @@ async function startScan(target) {
   try {
     await html5Qr.start(
       { facingMode: "environment" },
-      { fps: 8, qrbox: { width: 240, height: 140 } },
+      {
+        fps: 12,
+        qrbox: (w, h) => ({
+          width: Math.max(160, Math.floor(w * 0.86)),
+          height: Math.max(80, Math.floor(Math.min(h * 0.42, w * 0.36))),
+        }),
+        videoConstraints: {
+          facingMode: "environment",
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+      },
       (text) => {
         if (scanBusy) return;
         scanBusy = true;
@@ -781,9 +867,15 @@ async function startScan(target) {
         stopScan().then(() => applyBarcode(value, target));
       }
     );
+    await tuneCamera();
   } catch (err) {
     console.error(err);
+    if (html5Qr) {
+      try { await html5Qr.stop(); } catch {}
+      try { html5Qr.clear(); } catch {}
+    }
     html5Qr = null;
+    resetZoomBar();
     $("scanReader").innerHTML = `<p class="chart-hint">Câmera indisponível neste dispositivo. Feche e use a pistola USB no campo de código.</p>`;
     toast("Não foi possível abrir a câmera. Use a pistola USB.");
   }
@@ -791,6 +883,7 @@ async function startScan(target) {
 
 async function stopScan() {
   $("scanOverlay").hidden = true;
+  resetZoomBar();
   if (html5Qr) {
     try { await html5Qr.stop(); } catch {}
     try { html5Qr.clear(); } catch {}
@@ -909,6 +1002,9 @@ $("fieldPartNumber").addEventListener("keydown", (e) => {
 $("btnScanLookup").onclick = () => startScan("lookup");
 $("btnScanClose").onclick = () => stopScan();
 $("btnScanCancel").onclick = () => stopScan();
+$("zoomRange").oninput = () => applyCameraTuning($("zoomRange").value);
+$("zoomIn").onclick = () => stepZoom(1);
+$("zoomOut").onclick = () => stepZoom(-1);
 document.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-scan]");
   if (!btn) return;

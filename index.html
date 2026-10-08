@@ -291,7 +291,13 @@
         <button type="button" class="icon-btn" id="btnScanClose" aria-label="Fechar">×</button>
       </header>
       <div class="scan-reader" id="scanReader"></div>
-      <p class="chart-hint">Use a câmera do celular ou uma pistola USB no campo de código.</p>
+      <div class="zoom-bar" id="zoomBar" hidden>
+        <button type="button" class="qty-btn" id="zoomOut" aria-label="Diminuir zoom">−</button>
+        <input type="range" id="zoomRange" min="1" max="3" step="0.1" value="1" />
+        <button type="button" class="qty-btn" id="zoomIn" aria-label="Aumentar zoom">+</button>
+        <span class="zoom-label" id="zoomLabel">1.0×</span>
+      </div>
+      <p class="chart-hint" id="scanHint">Aumente o zoom e segure o código a uns 20 cm. Encostar na lente tira o foco.</p>
       <footer class="sheet-foot">
         <button type="button" class="btn-ghost" id="btnScanCancel">Cancelar</button>
       </footer>

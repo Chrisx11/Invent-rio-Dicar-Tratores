@@ -430,6 +430,32 @@ main {
   display: block;
 }
 
+.zoom-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 18px 0;
+}
+
+.zoom-bar .qty-btn { width: 40px; height: 40px; }
+
+.zoom-bar input[type="range"] {
+  flex: 1;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  accent-color: var(--ember);
+}
+
+.zoom-label {
+  min-width: 46px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13px;
+  color: var(--ink);
+}
+
 #quickNewCatWrap input { border-color: var(--ember); }
 
 .kpis {
@@ -1021,6 +1047,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--ember); }
   .search-wrap { min-width: 0; }
   .search-wrap input,
   input, select, textarea { font-size: 16px; height: 48px; }
+  .zoom-bar input[type="range"] { height: 32px; }
 
   .chip, .filter-arrow { height: 42px; }
   .filter-arrow { width: 42px; flex-basis: 42px; }
